@@ -525,6 +525,67 @@ def main():
         print("My move:", render(119 - move[0]) + render(119 - move[1]))
         hist.append(hist[-1].move(move))
 
+###############################################################################
+# API
+###############################################################################
+
+# Obseervations.
+# No limit on history: though it grows forever, even when it grew to 93 elements
+# RAM use was much the same as on move 2.
+# RAM use increased by ~50K then reduced again.
+# No use of re: GUI is assumed only to submit lexically valid moves.
+
+def game(iboard=None):
+    start_pos = iboard if iboard is not None else initial
+    hist = [Position(start_pos, 0, (True, True), (True, True), 0, 0)]
+    searcher = Searcher()
+    black_move = None
+    while True:
+        gc.collect()
+        print(gc.mem_free(), len(hist))
+        #print_pos(hist[-1])
+
+        if hist[-1].score <= -MATE_LOWER:
+            return False  # StopIteration: player lost
+
+        # Yield current board state and last black move (if any)
+        amove = yield hist[-1], black_move  # Await a move
+        move = parse(amove[:2]), parse(amove[2:])
+        while move not in hist[-1].gen_moves():
+            amove = yield  # A None reponse prompts user to try again
+            move = parse(amove[:2]), parse(amove[2:])
+        hist.append(hist[-1].move(move))
+
+        # After our move we rotate the board and print it again.
+        # This allows us to see the effect of our move.
+        yield (hist[-1].rotate())
+
+        if hist[-1].score <= -MATE_LOWER:
+            return True  # Player won
+
+        # Fire up the engine to look for a move.
+        start = time.ticks_ms()
+        for _depth, move, score in searcher.search(hist[-1], hist):
+            if time.ticks_diff(time.ticks_ms(), start) > 1000:
+                break
+
+        if score == MATE_UPPER:
+            return False  # Player lost
+
+        # The black player moves from a rotated position, so we have to
+        # 'back rotate' the move before printing it.
+        black_move = render(119 - move[0]) + render(119 - move[1])
+        print("My move:", black_move)
+        hist.append(hist[-1].move(move))
+
+# Return contents of board in left to right, top to bottom order.
+def get_board(position):
+    i = 21
+    c = 0
+    while True:
+        yield position.board[i]
+        c = (c + 1) & 7
+        i += 1 if c else 3
 
 if __name__ == "__main__":
     main()

@@ -529,14 +529,14 @@ def main():
 # API
 ###############################################################################
 
-# Obseervations.
+# Observations.
 # No limit on history: though it grows forever, even when it grew to 93 elements
 # RAM use was much the same as on move 2.
 # RAM use increased by ~50K then reduced again.
 # No use of re: GUI is assumed only to submit lexically valid moves.
 
 def game(iboard=None):
-    start_pos = iboard if iboard is not None else initial
+    start_pos = make_board(iboard) if iboard is not None else initial
     hist = [Position(start_pos, 0, (True, True), (True, True), 0, 0)]
     searcher = Searcher()
     black_move = None
@@ -549,7 +549,7 @@ def game(iboard=None):
             return False  # StopIteration: player lost
 
         # Yield current board state and last black move (if any)
-        amove = yield hist[-1], black_move  # Await a move
+        amove = yield hist[-1].board, black_move  # Await a move
         move = parse(amove[:2]), parse(amove[2:])
         while move not in hist[-1].gen_moves():
             amove = yield  # A None reponse prompts user to try again
@@ -558,7 +558,7 @@ def game(iboard=None):
 
         # After our move we rotate the board and print it again.
         # This allows us to see the effect of our move.
-        yield (hist[-1].rotate())
+        yield (hist[-1].rotate()).board
 
         if hist[-1].score <= -MATE_LOWER:
             return True  # Player won
@@ -575,17 +575,35 @@ def game(iboard=None):
         # The black player moves from a rotated position, so we have to
         # 'back rotate' the move before printing it.
         black_move = render(119 - move[0]) + render(119 - move[1])
-        print("My move:", black_move)
+        # print("My move:", black_move)
         hist.append(hist[-1].move(move))
 
 # Return contents of board in left to right, top to bottom order.
-def get_board(position):
+def get_board(board):
     i = 21
     c = 0
     while True:
-        yield position.board[i]
+        b = board[i]
+        yield b if b != "." else ""
         c = (c + 1) & 7
         i += 1 if c else 3
+
+# Convert a board bytes object to a Sunfish compatible board. Enable arbitrary start positions.
+# The bytes object has length 64 and represents a board in alphabetic form.
+
+def make_board(b):
+    ba = bytearray(120)
+    bl = b'         \n'  # Blank line 10 bytes long
+    for cell in range(0, 120, 10):  # Blank the array
+        ba[cell : cell + 10] = bl
+    n = 0
+    for cell in range(21, 92, 10):
+        ba[cell : cell + 8] = b[n : n + 8]
+        n += 8
+        for x in range(cell, cell + 8):
+            if ba[x] == ord(" "):
+                ba[x] = ord('.')
+    return ba.decode("utf8")
 
 if __name__ == "__main__":
     main()

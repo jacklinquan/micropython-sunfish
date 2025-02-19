@@ -542,8 +542,8 @@ def game(iboard=None):
     black_move = None
     while True:
         gc.collect()
-        print(gc.mem_free(), len(hist))
-        #print_pos(hist[-1])
+        # print(gc.mem_free(), len(hist))
+        # print_pos(hist[-1])
 
         if hist[-1].score <= -MATE_LOWER:
             return False  # StopIteration: player lost

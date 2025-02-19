@@ -15,7 +15,7 @@ It is tested with MicroPython V1.19.1 on ESP32.
 
 The file may be installed on target hardware with `mpremote`:
 ```bash
-$ mpremote mip install github:/jacklinquan/micropython-sunfish/sunfish.py
+$ mpremote mip install github:jacklinquan/micropython-sunfish
 ```
 
 # Gameplay

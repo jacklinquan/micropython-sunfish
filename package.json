@@ -1,6 +1,6 @@
 {
   "urls": [
-    ["sunfish_.py", "github:jacklinquan/micropython-sunfish/sunfish.py"]
+    ["sunfish.py", "github:jacklinquan/micropython-sunfish/sunfish.py"]
   ],
   "version": "0.1"
 }
